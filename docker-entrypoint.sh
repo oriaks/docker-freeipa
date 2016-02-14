@@ -13,6 +13,26 @@ case $1 in
   "dirsrv")
     exec /usr/sbin/ns-slapd -D /etc/dirsrv/slapd -i /var/run/dirsrv/slapd.pid -w /var/run/dirsrv/slapd.startpid -d0
     ;;
+  "ipa-server-install")
+    /lib/systemd/systemd --system
+    ipa-server-install \
+      --realm "$(echo ${DOMAIN} | tr '[a-z]' '[A-Z]')" \
+      --domain "${DOMAIN}" \
+      --ds-password "${DS_PASSWORD}" \
+      --master-password "${MASTER_PASSWORD}" \
+      --admin-password "${ADMIN_PASSWORD}" \
+      --mkhomedir \
+      --hostname "${HOST}" \
+      --no-ntp \
+      --idstart "${IDSTART}" \
+      --idmax "${IDMAX}" \
+      --no-host-dns \
+      --unattended
+    ln -sf "slapd-$(echo ${DOMAIN} | tr '[a-z].' '[A-Z]-')" /etc/dirsrv/slapd
+    ln -sf "slapd-$(echo ${DOMAIN} | tr '[a-z].' '[A-Z]-').pid" /var/run/dirsrv/slapd.pid
+    ln -sf "slapd-$(echo ${DOMAIN} | tr '[a-z].' '[A-Z]-').startpid" /var/run/dirsrv/slapd.startpid
+    systemctl poweroff
+    ;;
   "krb5-admin-server")
     exec /usr/sbin/kadmind -nofork
     ;;
@@ -20,6 +40,7 @@ case $1 in
     exec /usr/sbin/krb5kdc -P /var/run/krb5-kdc.pid -n
     ;;
   "memcached")
+    chown -R www-data:www-data /var/run/ipa_memcached
     exec /usr/bin/memcached -s /var/run/ipa_memcached/ipa_memcached -u www-data -m 64 -c 1024 -P /var/run/ipa_memcached/ipa_memcached.pid
     ;;
   "pki-tomcatd")
