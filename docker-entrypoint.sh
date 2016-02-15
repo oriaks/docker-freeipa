@@ -12,6 +12,9 @@ case $1 in
     ;;
   "dirsrv")
     mkdir -p "/var/log/dirsrv/slapd-$(echo ${DOMAIN} | tr '[a-z].' '[A-Z]-')"
+    chown -R dirsrv:dirsrv "/var/log/dirsrv | tr '[a-z].' '[A-Z]-')"
+    mkdir -p "/var/lock/dirsrv/slapd-$(echo ${DOMAIN} | tr '[a-z].' '[A-Z]-')"
+    chown -R dirsrv:dirsrv "/var/lock/dirsrv | tr '[a-z].' '[A-Z]-')"
     exec /usr/sbin/ns-slapd -D "/etc/dirsrv/slapd-$(echo ${DOMAIN} | tr '[a-z].' '[A-Z]-')" -i "/var/run/dirsrv/slapd-$(echo ${DOMAIN} | tr '[a-z].' '[A-Z]-').pid" -w "/var/run/dirsrv/slapd-$(echo ${DOMAIN} | tr '[a-z].' '[A-Z]-').startpid" -d0
     ;;
   "ipa-server-install")
@@ -37,7 +40,7 @@ case $1 in
     cp -Rp /etc/krb5.conf /mnt/docker-volumes/krb5/krb5.conf
     cp -Rp /etc/krb5.keytab /mnt/docker-volumes/krb5/krb5.keytab
     cp -Rp /etc/pki /mnt/docker-volumes/pki/config
-    cp -Rp /run /mnt/docker-volumes/run
+    cp -Rp /run /mnt/docker-volumes
     cp -Rp /var/lib/dirsrv /mnt/docker-volumes/389ds/data
     cp -Rp /var/lib/ipa/pki-ca /mnt/docker-volumes/pki/ca
     cp -Rp /var/lib/pki /mnt/docker-volumes/pki/data
@@ -80,7 +83,7 @@ case $1 in
     exit 0
     ;;
   "systemd")
-    /lib/systemd/systemd --system
+    /lib/systemd/systemd
     ;;
 esac
 
