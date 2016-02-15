@@ -11,10 +11,10 @@ case $1 in
     exec /usr/sbin/certmonger -L -S -p /var/run/certmonger.pid -n -d2
     ;;
   "dirsrv")
-    exec /usr/sbin/ns-slapd -D /etc/dirsrv/slapd -i /var/run/dirsrv/slapd.pid -w /var/run/dirsrv/slapd.startpid -d0
+    mkdir -p "/var/log/dirsrv/slapd-$(echo ${DOMAIN} | tr '[a-z].' '[A-Z]-')"
+    exec /usr/sbin/ns-slapd -D "/etc/dirsrv/slapd-$(echo ${DOMAIN} | tr '[a-z].' '[A-Z]-')" -i "/var/run/dirsrv/slapd-$(echo ${DOMAIN} | tr '[a-z].' '[A-Z]-').pid" -w "/var/run/dirsrv/slapd-$(echo ${DOMAIN} | tr '[a-z].' '[A-Z]-').startpid" -d0
     ;;
   "ipa-server-install")
-    /lib/systemd/systemd --system
     ipa-server-install \
       --realm "$(echo ${DOMAIN} | tr '[a-z]' '[A-Z]')" \
       --domain "${DOMAIN}" \
@@ -28,6 +28,20 @@ case $1 in
       --idmax "${IDMAX}" \
       --no-host-dns \
       --unattended
+    cp -Rp /etc/apache2 /mnt/docker-volumes/freeipa/apache2
+    cp -Rp /etc/bind /mnt/docker-volumes/named/config
+    cp -Rp /etc/dirsrv /mnt/docker-volumes/389ds/config
+    cp -Rp /etc/dogtag /mnt/docker-volumes/pki/dogtag
+    cp -Rp /etc/ipa /mnt/docker-volumes/freeipa/ipa
+    cp -Rp /etc/krb5kdc /mnt/docker-volumes/krb5/config
+    cp -Rp /etc/krb5.conf /mnt/docker-volumes/krb5/krb5.conf
+    cp -Rp /etc/krb5.keytab /mnt/docker-volumes/krb5/krb5.keytab
+    cp -Rp /etc/pki /mnt/docker-volumes/pki/config
+    cp -Rp /run /mnt/docker-volumes/run
+    cp -Rp /var/lib/dirsrv /mnt/docker-volumes/389ds/data
+    cp -Rp /var/lib/ipa/pki-ca /mnt/docker-volumes/pki/ca
+    cp -Rp /var/lib/pki /mnt/docker-volumes/pki/data
+    cp -Rp /var/log/pki /mnt/docker-volumes/pki/log
     ln -sf "slapd-$(echo ${DOMAIN} | tr '[a-z].' '[A-Z]-')" /etc/dirsrv/slapd
     ln -sf "slapd-$(echo ${DOMAIN} | tr '[a-z].' '[A-Z]-').pid" /var/run/dirsrv/slapd.pid
     ln -sf "slapd-$(echo ${DOMAIN} | tr '[a-z].' '[A-Z]-').startpid" /var/run/dirsrv/slapd.startpid
@@ -40,7 +54,6 @@ case $1 in
     exec /usr/sbin/krb5kdc -P /var/run/krb5-kdc.pid -n
     ;;
   "memcached")
-    chown -R www-data:www-data /var/run/ipa_memcached
     exec /usr/bin/memcached -s /var/run/ipa_memcached/ipa_memcached -u www-data -m 64 -c 1024 -P /var/run/ipa_memcached/ipa_memcached.pid
     ;;
   "pki-tomcatd")
@@ -65,6 +78,9 @@ case $1 in
     start
     sleep 9999999999999999999
     exit 0
+    ;;
+  "systemd")
+    /lib/systemd/systemd --system
     ;;
 esac
 
